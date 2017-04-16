@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.zombie.dto.GenderDTO;
+import br.com.zombie.exception.IdNotFoundException;
 import br.com.zombie.repository.GenderRepository;
 
 @RestController
@@ -42,8 +44,8 @@ public class GenderController {
 	 */
 	@RequestMapping(method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public List<GenderDTO> findAll() {
-		return repository.findAll();
+	public ResponseEntity<List<GenderDTO>> findAll() {
+		return new ResponseEntity<List<GenderDTO>>(repository.findAll(), HttpStatus.OK);
 	}
 
 	/**
@@ -54,8 +56,13 @@ public class GenderController {
 	 */
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public GenderDTO findById(@PathVariable("id") Integer id) {
-		return repository.findOne(id);
+	public ResponseEntity<?> findById(@PathVariable("id") Integer id) {
+		GenderDTO gender = repository.findOne(id);
+		if (gender != null) {
+			return new ResponseEntity<>(gender, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(new IdNotFoundException("Gender with respective Id: {" + id + "} not found."), HttpStatus.NO_CONTENT);
+		}
 	}
 
 	/**
@@ -64,10 +71,9 @@ public class GenderController {
 	 * @param gender
 	 */
 	@RequestMapping(method = RequestMethod.POST)
-	@ResponseStatus(HttpStatus.CREATED)
 	@ResponseBody
-	public void insert(@RequestBody GenderDTO gender) {
-		repository.saveAndFlush(gender);
+	public ResponseEntity<GenderDTO> insert(@RequestBody GenderDTO gender) {
+		return new ResponseEntity<GenderDTO>(repository.save(gender), HttpStatus.CREATED);
 	}
 
 	/**
@@ -76,18 +82,29 @@ public class GenderController {
 	 * @param id
 	 */
 	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
-	@ResponseStatus(HttpStatus.OK)
 	@ResponseBody
-	public void remove(@PathVariable("id") Integer id) {
-		repository.delete(findById(id));
+	public ResponseEntity<?> remove(@PathVariable("id") Integer id) {
+		if (repository.findOne(id) != null) {
+			repository.delete(id);
+			return new ResponseEntity<>(HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(new IdNotFoundException("Gender with respective Id: {" + id + "} not found."), HttpStatus.NO_CONTENT);
+		}
 	}
 
 	@RequestMapping(value = "/{id}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(HttpStatus.OK)
-	public void update(@PathVariable("id") Integer id, @RequestBody GenderDTO gender) {
-		GenderDTO genderResult = findById(id);
+	public ResponseEntity<?> update(@PathVariable("id") Integer id, @RequestBody GenderDTO gender) {
+
+		GenderDTO genderResult = repository.findOne(id);
+
 		if (genderResult != null) {
-			repository.saveAndFlush(genderResult);
+			gender.setGenderId(id);
+			repository.save(genderResult);
+			return new ResponseEntity<>(HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(new IdNotFoundException("Gender with respective Id: {" + id + "} not found."),
+					HttpStatus.NO_CONTENT);
 		}
 	}
 

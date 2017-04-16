@@ -57,11 +57,11 @@ public class InventoryController {
 	 * 
 	 * @param inventory
 	 */
-	@RequestMapping(method = RequestMethod.POST)
+	@RequestMapping(method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(HttpStatus.CREATED)
 	@ResponseBody
-	public void insert(@RequestBody InventoryDTO inventory) {
-		repository.saveAndFlush(inventory);
+	public InventoryDTO insert(InventoryDTO inventory) {
+		return repository.save(inventory);
 	}
 
 	/**

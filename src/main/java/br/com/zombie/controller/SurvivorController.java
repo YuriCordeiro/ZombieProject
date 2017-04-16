@@ -5,7 +5,9 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -40,13 +42,14 @@ public class SurvivorController {
 	 * @throws DBException
 	 */
 	@RequestMapping(method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseStatus(HttpStatus.CREATED)
 	@ResponseBody
-	public void insert(SurvivorDTO survivor) throws DBException {
-		repository.saveAndFlush(survivor);
+	public SurvivorDTO insert(SurvivorDTO survivor) {
+		return repository.save(survivor);
 	}
 
 	/**
-	 * Find a survivr by ID
+	 * Find a survivor by ID
 	 * 
 	 * @param id
 	 * @return
@@ -54,8 +57,14 @@ public class SurvivorController {
 	 */
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public SurvivorDTO findById(@PathVariable("id") Integer id) throws DBException {
-		return repository.findOne(id);
+	public ResponseEntity<?> findById(@PathVariable("id") Integer id) throws DBException {
+		SurvivorDTO survivor = repository.findOne(id);
+		if(survivor != null) {
+			return new ResponseEntity<SurvivorDTO>(repository.findOne(id), HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(new IdNotFoundException("Survivor with respective id: " + id + " not found."), HttpStatus.NO_CONTENT);
+		}
+		
 	}
 
 	/**
@@ -66,10 +75,17 @@ public class SurvivorController {
 	 * @throws DBException
 	 */
 	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
-	@ResponseStatus(HttpStatus.OK)
 	@ResponseBody
-	public void remove(@PathVariable("id") Integer id) throws IdNotFoundException, DBException {
-		repository.delete(findById(id));
+	public ResponseEntity<?> remove(@PathVariable("id") Integer id) throws IdNotFoundException, DBException {
+
+		SurvivorDTO survivor = repository.findOne(id);
+		if (survivor != null) {
+			repository.delete(id);
+			return new ResponseEntity<>(HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(new IdNotFoundException("Survivor with respective id: " + id + " not found."),
+					HttpStatus.NO_CONTENT);
+		}
 	}
 
 	/**
@@ -79,24 +95,32 @@ public class SurvivorController {
 	 * @throws DBException
 	 */
 	@RequestMapping(value = "/{id}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
-	@ResponseStatus(HttpStatus.OK)
 	@ResponseBody
-	public void update(Integer id) throws DBException {
+	public ResponseEntity<?> update(Integer id, @RequestBody SurvivorDTO survivor) throws DBException {
 		SurvivorDTO survivorResult = new SurvivorDTO();
-		survivorResult = findById(id);
+		survivorResult = repository.findOne(id);
 
-		repository.saveAndFlush(survivorResult);
+		if (survivorResult != null) {
+			survivor.setSurvivorCode(id);
+			repository.save(survivor);
+			return new ResponseEntity<>(HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(new IdNotFoundException("Survivor with respective id: " + id + " not found."),
+					HttpStatus.NO_CONTENT);
+		}
+
 	}
 
-	@RequestMapping(method = RequestMethod.GET)
-	public List<SurvivorDTO> findAll() {
-		return repository.findAll();
+	@RequestMapping(method = RequestMethod.GET ,produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	@ResponseStatus(HttpStatus.OK)
+	public ResponseEntity<List<SurvivorDTO>> findAll() {
+		return new ResponseEntity<>(repository.findAll(), HttpStatus.OK);
 	}
 
 	@RequestMapping(value = "/trader/{tradingSurivorCode}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
-	@ResponseStatus(HttpStatus.OK)
 	@ResponseBody
-	public void tradeItem(@PathVariable("tradingSurvivorCode") Integer tradingSurvivorCode, Integer itemCode, Integer amountOfItemToTrade, Integer survivorReceptorCode)
+	public ResponseEntity<?> tradeItem(@PathVariable("tradingSurvivorCode") Integer tradingSurvivorCode, Integer itemCode, Integer amountOfItemToTrade, Integer survivorReceptorCode)
 			throws IsInfectedException, IdNotFoundException, DBException {
 		SurvivorDTO whosTrading = new SurvivorDTO();
 		whosTrading = repository.findOne(tradingSurvivorCode); // Find for who's
@@ -160,8 +184,8 @@ public class SurvivorController {
 
 									// If everything's ok, commit the changes on
 									// database
-									repository.saveAndFlush(whosTrading);
-									repository.saveAndFlush(survivorReceptor);
+									repository.save(whosTrading);
+									repository.save(survivorReceptor);
 								}
 
 							} else {
@@ -182,8 +206,11 @@ public class SurvivorController {
 						+ " cannot trade items, cuz' (he's/she's) infected");
 			}
 
+			return new ResponseEntity<>(HttpStatus.OK);
+			
 		} else { // If whosTading equals null
-			throw new IdNotFoundException("Cannot find survivor with respective code: " + tradingSurvivorCode);
+			return new ResponseEntity<>(new IdNotFoundException("Survivor with respective id: " + tradingSurvivorCode + " not found."),
+					HttpStatus.NO_CONTENT);
 		}
 	}
 
@@ -226,46 +253,42 @@ public class SurvivorController {
 	 * @throws DBException
 	 * @throws IdNotFoundException
 	 */
-	@RequestMapping(value="/lastLocal/survivor/{survivorCode}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
-	@ResponseStatus(HttpStatus.OK)
+	@RequestMapping(value = "/lastLocal/survivor/{survivorCode}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public void updateLastSurvivorLocal(Integer survivorCode, String latitude, String longitude)
-			throws DBException, IdNotFoundException {
+	public ResponseEntity<?> updateLastSurvivorLocal(@PathVariable("survivorCode") Integer survivorCode,
+			@RequestBody LocalDTO lastLocal) throws DBException, IdNotFoundException {
 
 		SurvivorDTO survivorObject = new SurvivorDTO();
-
-		LocalDTO lastSurvivorLocal = new LocalDTO();
-		lastSurvivorLocal.setLatitude(latitude);
-		lastSurvivorLocal.setLongitude(longitude);
-
 		survivorObject = repository.findOne(survivorCode);
 
 		if (survivorObject != null) {
-			survivorObject.setSurvivorLastLocal(lastSurvivorLocal);
-			repository.saveAndFlush(survivorObject);
+			survivorObject.setSurvivorLastLocal(lastLocal);
+			repository.save(survivorObject);
+			return new ResponseEntity<>(HttpStatus.OK);
 		} else {
-			throw new IdNotFoundException("Survivor with respective code: '" + survivorCode + "' not found.");
+			return new ResponseEntity<>(new IdNotFoundException("Survivor with respective code: {" + survivorCode + "} not found"), HttpStatus.NO_CONTENT);
 		}
 	}
 
 	@RequestMapping(value = "/warninfect/{survivorCode}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
-	public void flagSurvivorAsInfected(Integer survivorCode) throws DBException, IdNotFoundException {
+	public ResponseEntity<?> flagSurvivorAsInfected(Integer survivorCode) throws DBException, IdNotFoundException {
 
-		SurvivorDTO survivor = new SurvivorDTO();
+		SurvivorDTO survivor = repository.findOne(survivorCode); 
 
-		survivor = repository.findOne(survivorCode);
 		if (survivor != null) {
 
 			survivor.setAmountOfInfectedWarnings(survivor.getAmountOfInfectedWarnings() + 1);
 
 			if (survivor.getAmountOfInfectedWarnings() >= 3) {
 				survivor.setInfected(true);
+				System.out.println("Survivor: " + survivor.getSurvivorName() + ", has been diagnosed as infected.");
 			}
 
-			repository.saveAndFlush(survivor);
+			repository.save(survivor);
+			return new ResponseEntity<>(HttpStatus.OK);
 
 		} else {
-			throw new IdNotFoundException("Survivor with respective code: '" + survivorCode + "' not found.");
+			return new ResponseEntity<>(new IdNotFoundException("Survivor with respective code: {" + survivorCode + "} not found"), HttpStatus.NO_CONTENT);
 		}
 	}
 

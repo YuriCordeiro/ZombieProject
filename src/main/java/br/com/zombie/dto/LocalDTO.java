@@ -5,16 +5,23 @@ import java.io.Serializable;
 import javax.annotation.ManagedBean;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 @ManagedBean
 @Entity
 @Table(name="T_LOCAL")
-public class LocalDTO {
+@SequenceGenerator(name="seqLocal", sequenceName="SQ_LOCAL", allocationSize=1)
+public class LocalDTO implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	@Id
 	@Column(name="ID_LCL")
+	@GeneratedValue(generator="seqLocal", strategy=GenerationType.SEQUENCE)
 	private Integer localCode;
 
 	@Column(name="DS_LAT")
@@ -65,10 +72,5 @@ public class LocalDTO {
 
 	public void setLongitude(String longitude) {
 		this.longitude = longitude;
-	}
-	
-	public Serializable getKey() {
-		return localCode;
-	}
-	
+	}	
 }

@@ -5,15 +5,16 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.zombie.dto.LocalDTO;
+import br.com.zombie.exception.IdNotFoundException;
 import br.com.zombie.repository.LocalRepository;
 
 @RestController
@@ -36,8 +37,8 @@ public class LocalController {
 	 */
 	@RequestMapping(method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public List<LocalDTO> findAll() {
-		return repository.findAll();
+	public ResponseEntity<List<LocalDTO>> findAll() {
+		return new ResponseEntity<List<LocalDTO>>(repository.findAll(), HttpStatus.OK);
 	}
 
 	/**
@@ -48,8 +49,13 @@ public class LocalController {
 	 */
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public LocalDTO findById(@PathVariable("id") Integer id) {
-		return repository.findOne(id);
+	public ResponseEntity<?> findById(@PathVariable("id") Integer id) {
+		LocalDTO local = repository.findOne(id);
+		if(local != null){
+			return new ResponseEntity<LocalDTO>(local, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(new IdNotFoundException("Local with respective id: {" + id + "} not found."), HttpStatus.NO_CONTENT);
+		}
 	}
 
 	/**
@@ -58,10 +64,9 @@ public class LocalController {
 	 * @param local
 	 */
 	@RequestMapping(method = RequestMethod.POST, consumes=MediaType.APPLICATION_JSON_VALUE)
-	@ResponseStatus(HttpStatus.CREATED)
 	@ResponseBody
-	public void insert(@RequestBody LocalDTO local) {
-		repository.save(local);
+	public ResponseEntity<LocalDTO> insert(@RequestBody LocalDTO local) {
+		return new ResponseEntity<LocalDTO>(repository.save(local), HttpStatus.CREATED);
 	}
 
 	/**
@@ -70,18 +75,30 @@ public class LocalController {
 	 * @param id
 	 */
 	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
-	@ResponseStatus(HttpStatus.OK)
 	@ResponseBody
-	public void remove(@PathVariable("id") Integer id) {
-		repository.delete(findById(id));
+	public ResponseEntity<?> remove(@PathVariable("id") Integer id) {
+
+		LocalDTO local = repository.findOne(id);
+
+		if (local != null) {
+			repository.delete(id);
+			return new ResponseEntity<>(HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(new IdNotFoundException("Local with respective id: {" + id + "} not found."),
+					HttpStatus.NO_CONTENT);
+		}
 	}
 
 	@RequestMapping(value = "/{id}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
-	@ResponseStatus(HttpStatus.OK)
-	public void update(@PathVariable("id") Integer id, @RequestBody LocalDTO local) {
-		LocalDTO localResult = findById(id);
+	public ResponseEntity<?> update(@PathVariable("id") Integer id, @RequestBody LocalDTO local) {
+		LocalDTO localResult = repository.findOne(id);
 		if (localResult != null) {
-			repository.saveAndFlush(localResult);
+			local.setLocalCode(id);
+			repository.save(local);
+			return new ResponseEntity<LocalDTO>(local, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(new IdNotFoundException("Local with respective id: {" + id + "} not found."),
+					HttpStatus.NO_CONTENT);
 		}
 	}
 	

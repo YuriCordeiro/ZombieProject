@@ -33,25 +33,25 @@ public class SurvivorDTO implements Serializable {
 	@JoinColumn(name = "ID_GND", referencedColumnName = "ID_GND")
 	private GenderDTO survivorGender;
 
-	@Column(name = "SRV_AGE", nullable = false, length = 3)
+	@Column(name = "SRV_AGE", length = 3)
 	private Integer survivorAge;
 
-	@OneToOne(fetch = FetchType.LAZY, cascade=CascadeType.PERSIST)
+	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "ID_LCL", referencedColumnName="ID_LCL" ,nullable = true)
 	private LocalDTO lastSurvivorLocal;
 
-	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "ID_INV", referencedColumnName="ID_INV", nullable=true) //Auto-increased
 	private InventoryDTO survivorInventory;
 
 	// If equals 1 = Infected
 	// If equals 0 = Non-Infected
 	@Column(name = "IS_INFC")
-	private boolean infected = false;
+	private boolean infected;
 
 	// If other survivors warns it >= 3, the flag 'infected' will be true
 	@Column(name = "AMT_INF_WRN")
-	private Integer amountOfInfectedWarnings = 0;
+	private Integer amountOfInfectedWarnings;
 
 	// /******************************************************************************
 	// * Constructor(s) default - Java Beans
@@ -136,10 +136,6 @@ public class SurvivorDTO implements Serializable {
 
 	public void setAmountOfInfectedWarnings(Integer amountOfInfectedWarnings) {
 		this.amountOfInfectedWarnings = amountOfInfectedWarnings;
-	}
-
-	public Serializable getKey() {
-		return survivorCode;
 	}
 
 }
