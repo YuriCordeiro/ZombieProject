@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.zombie.dto.GenderDTO;
-import br.com.zombie.service.GenderRepository;
+import br.com.zombie.repository.GenderRepository;
 
 @RestController
 @RequestMapping(GenderController.GENDER_BASE_URI)
