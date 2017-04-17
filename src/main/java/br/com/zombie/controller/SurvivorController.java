@@ -2,6 +2,7 @@ package br.com.zombie.controller;
 
 import java.util.List;
 
+import org.hibernate.service.spi.ServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -44,7 +45,11 @@ public class SurvivorController {
 	@RequestMapping(method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(HttpStatus.CREATED)
 	@ResponseBody
-	public SurvivorDTO insert(SurvivorDTO survivor) {
+	public SurvivorDTO insert(@RequestBody SurvivorDTO survivor) {
+		if (survivor.getAmountOfInfectedWarnings() >= 3) {
+			survivor.setInfected(true);
+			System.out.println("The survivor " + survivor.getSurvivorName() + " is infected");
+		}
 		return repository.save(survivor);
 	}
 
@@ -60,7 +65,7 @@ public class SurvivorController {
 	public ResponseEntity<?> findById(@PathVariable("id") Integer id) throws DBException {
 		SurvivorDTO survivor = repository.findOne(id);
 		if(survivor != null) {
-			return new ResponseEntity<SurvivorDTO>(repository.findOne(id), HttpStatus.OK);
+			return new ResponseEntity<SurvivorDTO>(survivor, HttpStatus.OK);
 		} else {
 			return new ResponseEntity<>(new IdNotFoundException("Survivor with respective id: " + id + " not found."), HttpStatus.NO_CONTENT);
 		}
@@ -96,14 +101,14 @@ public class SurvivorController {
 	 */
 	@RequestMapping(value = "/{id}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public ResponseEntity<?> update(Integer id, @RequestBody SurvivorDTO survivor) throws DBException {
+	public ResponseEntity<?> update(@PathVariable("id") Integer id, @RequestBody SurvivorDTO survivor) throws DBException {
 		SurvivorDTO survivorResult = new SurvivorDTO();
 		survivorResult = repository.findOne(id);
 
 		if (survivorResult != null) {
 			survivor.setSurvivorCode(id);
 			repository.save(survivor);
-			return new ResponseEntity<>(HttpStatus.OK);
+			return new ResponseEntity<>(survivor, HttpStatus.OK);
 		} else {
 			return new ResponseEntity<>(new IdNotFoundException("Survivor with respective id: " + id + " not found."),
 					HttpStatus.NO_CONTENT);
@@ -115,12 +120,15 @@ public class SurvivorController {
 	@ResponseBody
 	@ResponseStatus(HttpStatus.OK)
 	public ResponseEntity<List<SurvivorDTO>> findAll() {
-		return new ResponseEntity<>(repository.findAll(), HttpStatus.OK);
+		return new ResponseEntity<List<SurvivorDTO>>(repository.findAll(), HttpStatus.OK);
 	}
 
-	@RequestMapping(value = "/trader/{tradingSurivorCode}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/trader/{tradingSurvivorCode}/item/{itemCode}/amount/{amountOfItemToTrade}/benefited/{survivorReceptorCode}",method = RequestMethod.PUT)
 	@ResponseBody
-	public ResponseEntity<?> tradeItem(@PathVariable("tradingSurvivorCode") Integer tradingSurvivorCode, Integer itemCode, Integer amountOfItemToTrade, Integer survivorReceptorCode)
+	public ResponseEntity<?> tradeItem(@PathVariable("tradingSurvivorCode") Integer tradingSurvivorCode,
+			@PathVariable("itemCode") Integer itemCode,
+			@PathVariable("amountOfItemToTrade") Integer amountOfItemToTrade,
+			@PathVariable("survivorReceptorCode") Integer survivorReceptorCode)
 			throws IsInfectedException, IdNotFoundException, DBException {
 		SurvivorDTO whosTrading = new SurvivorDTO();
 		whosTrading = repository.findOne(tradingSurvivorCode); // Find for who's
@@ -157,6 +165,10 @@ public class SurvivorController {
 																				// do
 																				// u
 																				// have?
+							
+							Integer totalPrice = itemObj.getItemPrice()*amountOfItemToTrade;
+							
+							
 							itemObj.setItemAmount(itemObj.getItemAmount() - amountOfItemToTrade); // changes
 																									// the
 																									// current
@@ -180,12 +192,19 @@ public class SurvivorController {
 																		// not
 																		// infected
 
-									incrementReceptorSurvivorInventory(itemCode, survivorReceptor, amountOfItemToTrade);
+									if (survivorReceptor.getPoints() >= totalPrice) { //If have points enough
+										incrementReceptorSurvivorInventory(itemCode, survivorReceptor,
+												amountOfItemToTrade);
 
-									// If everything's ok, commit the changes on
-									// database
-									repository.save(whosTrading);
-									repository.save(survivorReceptor);
+										// If everything's ok, commit the
+										// changes on
+										// database
+										repository.save(whosTrading);
+										repository.save(survivorReceptor);
+									} else {
+										System.out.println("The survivor " + survivorReceptor.getSurvivorName() + " have not points enough");
+										throw new ServiceException("The survivor " + survivorReceptor.getSurvivorName() + " have not points enough");
+									}
 								}
 
 							} else {
@@ -262,7 +281,7 @@ public class SurvivorController {
 		survivorObject = repository.findOne(survivorCode);
 
 		if (survivorObject != null) {
-			survivorObject.setSurvivorLastLocal(lastLocal);
+			survivorObject.setLocal(lastLocal);
 			repository.save(survivorObject);
 			return new ResponseEntity<>(HttpStatus.OK);
 		} else {
@@ -270,7 +289,7 @@ public class SurvivorController {
 		}
 	}
 
-	@RequestMapping(value = "/warninfect/{survivorCode}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/warnasinfected/{survivorCode}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> flagSurvivorAsInfected(Integer survivorCode) throws DBException, IdNotFoundException {
 
 		SurvivorDTO survivor = repository.findOne(survivorCode); 
@@ -281,6 +300,7 @@ public class SurvivorController {
 
 			if (survivor.getAmountOfInfectedWarnings() >= 3) {
 				survivor.setInfected(true);
+				survivor.setPoints(survivor.getPoints() - 45);
 				System.out.println("Survivor: " + survivor.getSurvivorName() + ", has been diagnosed as infected.");
 			}
 

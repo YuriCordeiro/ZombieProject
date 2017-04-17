@@ -1,6 +1,7 @@
 package br.com.zombie.dto;
 
 import java.io.Serializable;
+import java.util.List;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -10,9 +11,13 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "T_SURVIVOR")
@@ -29,19 +34,21 @@ public class SurvivorDTO implements Serializable {
 	@Column(name = "NAM_SRV", nullable = false, length = 70)
 	private String survivorName;
 
-	@OneToOne(optional = false)
+	@OneToOne(optional = false, fetch=FetchType.LAZY)
 	@JoinColumn(name = "ID_GND", referencedColumnName = "ID_GND")
 	private GenderDTO survivorGender;
 
 	@Column(name = "SRV_AGE", length = 3)
 	private Integer survivorAge;
 
-	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "ID_LCL", referencedColumnName="ID_LCL" ,nullable = true)
-	private LocalDTO lastSurvivorLocal;
+	@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+	@ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+	@JoinColumn(name = "ID_LCL", referencedColumnName="ID_LCL", nullable = false)
+	private LocalDTO local;
 
-	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "ID_INV", referencedColumnName="ID_INV", nullable=true) //Auto-increased
+	@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+	@OneToOne(fetch = FetchType.LAZY, cascade=CascadeType.PERSIST)
+	@JoinColumn(name = "ID_INV", referencedColumnName="ID_INV", nullable=false) //Auto-increased
 	private InventoryDTO survivorInventory;
 
 	// If equals 1 = Infected
@@ -52,6 +59,9 @@ public class SurvivorDTO implements Serializable {
 	// If other survivors warns it >= 3, the flag 'infected' will be true
 	@Column(name = "AMT_INF_WRN")
 	private Integer amountOfInfectedWarnings;
+	
+	@Column(name = "AMT_PNTS")
+	private Integer points;
 
 	// /******************************************************************************
 	// * Constructor(s) default - Java Beans
@@ -106,14 +116,6 @@ public class SurvivorDTO implements Serializable {
 		this.survivorAge = survivorAge;
 	}
 
-	public LocalDTO getSurvivorLastLocal() {
-		return lastSurvivorLocal;
-	}
-
-	public void setSurvivorLastLocal(LocalDTO survivorLastLocal) {
-		this.lastSurvivorLocal = survivorLastLocal;
-	}
-
 	public InventoryDTO getSurvivorInventory() {
 		return survivorInventory;
 	}
@@ -136,6 +138,22 @@ public class SurvivorDTO implements Serializable {
 
 	public void setAmountOfInfectedWarnings(Integer amountOfInfectedWarnings) {
 		this.amountOfInfectedWarnings = amountOfInfectedWarnings;
+	}
+
+	public LocalDTO getLocal() {
+		return local;
+	}
+
+	public void setLocal(LocalDTO local) {
+		this.local = local;
+	}
+
+	public Integer getPoints() {
+		return points;
+	}
+
+	public void setPoints(Integer points) {
+		this.points = points;
 	}
 
 }

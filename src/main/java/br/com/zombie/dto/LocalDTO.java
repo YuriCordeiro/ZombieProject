@@ -29,6 +29,7 @@ public class LocalDTO implements Serializable {
 	
 	@Column(name="DS_LNG")
 	private String longitude = "000.000";
+
 	
 	
 //	/******************************************************************************
