@@ -7,5 +7,4 @@ import br.com.zombie.dto.InventoryDTO;
 
 @Repository
 public interface InventoryRepository extends JpaRepository<InventoryDTO, Integer> {
-
 }

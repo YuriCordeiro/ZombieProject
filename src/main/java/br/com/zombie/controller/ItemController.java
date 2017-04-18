@@ -96,8 +96,7 @@ public class ItemController {
 		ItemDTO itemResult = repository.findOne(id);
 		if (itemResult != null) {
 			item.setItemCode(id);
-			repository.save(item);
-			return new ResponseEntity<ItemDTO>(HttpStatus.OK);
+			return new ResponseEntity<ItemDTO>(repository.save(item), HttpStatus.OK);
 		} else {
 			return new ResponseEntity(new IdNotFoundException("Unable to delete. Item with id " + id + " not found."),
 					HttpStatus.NO_CONTENT);

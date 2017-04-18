@@ -101,4 +101,13 @@ public class ItemDTO implements Serializable {
 		this.inventory = inventory;
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("ItemDTO [itemCode=").append(itemCode).append(", itemDescription=").append(itemDescription)
+				.append(", itemAmount=").append(itemAmount).append(", itemPrice=").append(itemPrice)
+				.append(", inventory=").append(inventory).append("]");
+		return builder.toString();
+	}
+
 }

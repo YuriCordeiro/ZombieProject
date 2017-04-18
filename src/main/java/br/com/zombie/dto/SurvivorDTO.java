@@ -1,7 +1,6 @@
 package br.com.zombie.dto;
 
 import java.io.Serializable;
-import java.util.List;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -12,7 +11,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
@@ -34,17 +32,18 @@ public class SurvivorDTO implements Serializable {
 	@Column(name = "NAM_SRV", nullable = false, length = 70)
 	private String survivorName;
 
-	@OneToOne(optional = false, fetch=FetchType.LAZY)
-	@JoinColumn(name = "ID_GND", referencedColumnName = "ID_GND")
+	@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+	@OneToOne(fetch=FetchType.LAZY)
+	@JoinColumn(name = "ID_GND", referencedColumnName = "ID_GND", nullable = false)
 	private GenderDTO survivorGender;
 
 	@Column(name = "SRV_AGE", length = 3)
 	private Integer survivorAge;
 
 	@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-	@ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-	@JoinColumn(name = "ID_LCL", referencedColumnName="ID_LCL", nullable = false)
-	private LocalDTO local;
+	@ManyToOne(fetch = FetchType.LAZY, cascade= {CascadeType.PERSIST, CascadeType.MERGE})
+	@JoinColumn(name = "ID_LCL", referencedColumnName="ID_LCL")
+	private LocalDTO local = new LocalDTO();
 
 	@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 	@OneToOne(fetch = FetchType.LAZY, cascade=CascadeType.PERSIST)
@@ -60,30 +59,13 @@ public class SurvivorDTO implements Serializable {
 	@Column(name = "AMT_INF_WRN")
 	private Integer amountOfInfectedWarnings;
 	
-	@Column(name = "AMT_PNTS")
+	@Column(name = "AMT_PNTS", nullable = false)
 	private Integer points;
 
-	// /******************************************************************************
-	// * Constructor(s) default - Java Beans
-	// ******************************************************************************/
-	// public SurvivorTO() {
-	// super();
-	// }
-	//
-	// public SurvivorTO(String survivorName, GenderDTO survivorGender, Integer
-	// survivorAge, LocalTO survivorLastLocal, boolean infected) {
-	// super();
-	// this.survivorName = survivorName;
-	// this.survivorGender = survivorGender;
-	// this.survivorAge = survivorAge;
-	// this.lastSurvivorLocal = survivorLastLocal;
-	// this.infected = infected;
-	// this.amountOfInfectedWarnings = 0;
-	// }
 
-	/******************************************************************************
+	/*****************************************************
 	 * Getter(s) & Setter(s)
-	 ******************************************************************************/
+	 *****************************************************/
 	public Integer getSurvivorCode() {
 		return survivorCode;
 	}
@@ -154,6 +136,55 @@ public class SurvivorDTO implements Serializable {
 
 	public void setPoints(Integer points) {
 		this.points = points;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("SurvivorDTO [survivorCode=").append(survivorCode).append(", survivorName=").append(survivorName)
+				.append(", survivorGender=").append(survivorGender).append(", survivorAge=").append(survivorAge)
+				.append(", local=").append(local).append(", survivorInventory=").append(survivorInventory)
+				.append(", infected=").append(infected).append(", amountOfInfectedWarnings=")
+				.append(amountOfInfectedWarnings).append(", points=").append(points).append("]");
+		return builder.toString();
+	}
+	
+	public void populateItems() {
+		
+		setSurvivorInventory(new InventoryDTO());
+		
+		// ADD WATER //
+		ItemDTO water = new ItemDTO();
+		water.setItemAmount(1);
+		water.setItemDescription("Water");
+		water.setItemPrice(4);
+		water.setInventory(survivorInventory);
+
+		// ADD FOOD //
+		ItemDTO food = new ItemDTO();
+		food.setItemAmount(1);
+		food.setItemDescription("Food");
+		food.setItemPrice(3);
+		food.setInventory(survivorInventory);
+
+		// ADD MEDICATION //
+		ItemDTO medication = new ItemDTO();
+		medication.setItemAmount(1);
+		medication.setItemDescription("Medication");
+		medication.setItemPrice(2);
+		medication.setInventory(survivorInventory);
+
+		// ADD AMMUNITION //
+		ItemDTO ammunition = new ItemDTO();
+		ammunition.setItemAmount(10);
+		ammunition.setItemDescription("Ammunition");
+		ammunition.setItemPrice(1);
+		ammunition.setInventory(survivorInventory);
+		
+		survivorInventory.addItems(water);
+		survivorInventory.addItems(food);
+		survivorInventory.addItems(medication);
+		survivorInventory.addItems(ammunition);
 	}
 
 }

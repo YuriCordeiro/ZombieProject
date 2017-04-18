@@ -81,7 +81,7 @@ public class InventoryController {
 	public void update(@PathVariable("id") Integer id, @RequestBody InventoryDTO inventory) {
 		InventoryDTO inventoryResult = findById(id);
 		if (inventoryResult != null) {
-			repository.saveAndFlush(inventoryResult);
+			repository.save(inventoryResult);
 		}
 	}
 	

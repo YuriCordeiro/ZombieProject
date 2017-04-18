@@ -2,6 +2,7 @@ package br.com.zombie.controller;
 
 import java.util.List;
 
+
 import org.hibernate.service.spi.ServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,7 @@ import br.com.zombie.dto.SurvivorDTO;
 import br.com.zombie.exception.DBException;
 import br.com.zombie.exception.IdNotFoundException;
 import br.com.zombie.exception.IsInfectedException;
+import br.com.zombie.repository.ItemRepository;
 import br.com.zombie.repository.SurvivorRepository;
 
 @RestController
@@ -30,6 +32,9 @@ public class SurvivorController {
 	public static final String SURVIVOR_BASE_URI = "/survivors";
 
 	private SurvivorRepository repository;
+	
+	@Autowired
+	private ItemRepository itemRepository;
 
 	@Autowired
 	public SurvivorController(SurvivorRepository repository) {
@@ -46,6 +51,7 @@ public class SurvivorController {
 	@ResponseStatus(HttpStatus.CREATED)
 	@ResponseBody
 	public SurvivorDTO insert(@RequestBody SurvivorDTO survivor) {
+		survivor.populateItems();
 		if (survivor.getAmountOfInfectedWarnings() >= 3) {
 			survivor.setInfected(true);
 			System.out.println("The survivor " + survivor.getSurvivorName() + " is infected");
@@ -101,12 +107,17 @@ public class SurvivorController {
 	 */
 	@RequestMapping(value = "/{id}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public ResponseEntity<?> update(@PathVariable("id") Integer id, @RequestBody SurvivorDTO survivor) throws DBException {
+	public ResponseEntity<?> update(@PathVariable("id") Integer id, @RequestBody SurvivorDTO survivor)
+			throws DBException {
 		SurvivorDTO survivorResult = new SurvivorDTO();
 		survivorResult = repository.findOne(id);
 
 		if (survivorResult != null) {
+			
 			survivor.setSurvivorCode(id);
+			if (survivor.getSurvivorInventory() == null) {
+				survivor.setSurvivorInventory(survivorResult.getSurvivorInventory());
+			}
 			repository.save(survivor);
 			return new ResponseEntity<>(survivor, HttpStatus.OK);
 		} else {
@@ -130,6 +141,7 @@ public class SurvivorController {
 			@PathVariable("amountOfItemToTrade") Integer amountOfItemToTrade,
 			@PathVariable("survivorReceptorCode") Integer survivorReceptorCode)
 			throws IsInfectedException, IdNotFoundException, DBException {
+		
 		SurvivorDTO whosTrading = new SurvivorDTO();
 		whosTrading = repository.findOne(tradingSurvivorCode); // Find for who's
 															// trading the item
@@ -255,44 +267,57 @@ public class SurvivorController {
 	 * @param amountOfItem
 	 */
 	private void incrementReceptorSurvivorInventory(Integer itemCode, SurvivorDTO receptor, Integer amountOfItem) {
-		for (ItemDTO itemObj : receptor.getSurvivorInventory().getItems()) {
-			if (itemObj.getItemCode().equals(itemCode)) { // (He/she) have this
-															// item: then we add
-				itemObj.setItemAmount(itemObj.getItemAmount() + amountOfItem);
-				break;
+		ItemDTO item = itemRepository.findOne(itemCode);
+
+		for (ItemDTO itemObj : itemRepository.findAll()) {
+			if (itemObj.getItemDescription().equals(item.getItemDescription())) {
+				if (itemObj.getInventory().getInventoryCode().equals(item.getInventory().getInventoryCode())) {
+					itemObj.setItemAmount(itemObj.getItemAmount() + amountOfItem);
+					itemRepository.save(itemObj);
+				}
 			}
 		}
+
 	}
 
 	/**
 	 * Method updates the last local where survivor has sent any signal of life
 	 * 
-	 * @param survivorCode
+	 * @param survivorId
 	 * @param lastSurvivorLocal
 	 * @throws DBException
 	 * @throws IdNotFoundException
 	 */
-	@RequestMapping(value = "/lastLocal/survivor/{survivorCode}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/{survivorId}/update_location/{latitude}/{longitude}", method = RequestMethod.PUT)
 	@ResponseBody
-	public ResponseEntity<?> updateLastSurvivorLocal(@PathVariable("survivorCode") Integer survivorCode,
-			@RequestBody LocalDTO lastLocal) throws DBException, IdNotFoundException {
+	public ResponseEntity<?> updateLastSurvivorLocal(@PathVariable("survivorId") Integer survivorId,
+			@PathVariable("latitude") String latitude, @PathVariable("longitude") String longitude)
+			throws DBException, IdNotFoundException {
 
 		SurvivorDTO survivorObject = new SurvivorDTO();
-		survivorObject = repository.findOne(survivorCode);
+		survivorObject = repository.findOne(survivorId);
 
 		if (survivorObject != null) {
-			survivorObject.setLocal(lastLocal);
+			
+			LocalDTO local = new LocalDTO();
+			local.setLocalCode(survivorObject.getLocal().getLocalCode());
+			local.setLatitude(latitude);
+			local.setLongitude(longitude);
+			survivorObject.setLocal(local);
 			repository.save(survivorObject);
 			return new ResponseEntity<>(HttpStatus.OK);
+			
 		} else {
-			return new ResponseEntity<>(new IdNotFoundException("Survivor with respective code: {" + survivorCode + "} not found"), HttpStatus.NO_CONTENT);
+			return new ResponseEntity<>(
+					new IdNotFoundException("Survivor with respective code: {" + survivorId + "} not found"),
+					HttpStatus.NO_CONTENT);
 		}
 	}
 
-	@RequestMapping(value = "/warnasinfected/{survivorCode}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> flagSurvivorAsInfected(Integer survivorCode) throws DBException, IdNotFoundException {
+	@RequestMapping(value = "/warnasinfected/{survivorId}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> flagSurvivorAsInfected(@PathVariable("survivorId") Integer survivorId) throws DBException, IdNotFoundException {
 
-		SurvivorDTO survivor = repository.findOne(survivorCode); 
+		SurvivorDTO survivor = repository.findOne(survivorId); 
 
 		if (survivor != null) {
 
@@ -308,8 +333,18 @@ public class SurvivorController {
 			return new ResponseEntity<>(HttpStatus.OK);
 
 		} else {
-			return new ResponseEntity<>(new IdNotFoundException("Survivor with respective code: {" + survivorCode + "} not found"), HttpStatus.NO_CONTENT);
+			return new ResponseEntity<>(new IdNotFoundException("Survivor with respective code: {" + survivorId + "} not found"), HttpStatus.NO_CONTENT);
 		}
+	}
+	
+	@RequestMapping(value = "/reports/percentages/infected", produces = MediaType.APPLICATION_JSON_VALUE, method= RequestMethod.GET )
+	public ResponseEntity<?> findAverageOfInfectedPlayers() {
+		return new ResponseEntity<>(repository.findAVGInfected() * 100 + "%", HttpStatus.OK);
+	}
+	
+	@RequestMapping(value = "/reports/percentages/non_infected", produces = MediaType.APPLICATION_JSON_VALUE, method= RequestMethod.GET )
+	public ResponseEntity<?> findAverageOfNonInfectedPlayers() {
+		return new ResponseEntity<>(repository.findAVGNonInfected() * 100 + "%", HttpStatus.OK);
 	}
 
 }
