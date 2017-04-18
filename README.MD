@@ -2,7 +2,6 @@
 
 ## Documentation
 
-
 #### Create Gender
 URL: **/genders**
 
@@ -53,6 +52,109 @@ Method: **DELETE**
 
 ---
 
+
+#### Create Inventory
+URL: **/inventories**
+
+Method: **POST**
+
+---
+
+#### Show Inventory
+URL: **/inventories/:id**
+
+Method: **GET**
+
+---
+
+#### List Inventory
+URL: **/inventories/**
+
+Method: **GET**
+
+---
+
+#### Delete Inventory
+URL: **/inventories/:id**
+
+Method: **DELETE**
+
+---
+
+#### Update Inventory
+URL: **/inventories/:id**
+
+Method: **PUT**
+
+Example:
+```json
+{
+	"items": [{"itemDescription": "Water", "itemAmount": 3, "itemPrice": 4}]
+}
+```
+
+---
+
+#### Create Item
+URL: **/items**
+
+Method: **POST**
+
+Example:
+```json
+{
+	"itemDescription": "Water",
+
+	"itemAmount": 3,
+
+	"itemPrice": 4,
+	
+	"inventory": {"inventoryCode": 1}
+}
+```
+
+---
+
+#### Update Item
+URL: **/items/:itemId**
+
+Method: **PUT**
+
+Example:
+```json
+{
+	"itemDescription": "Food",
+
+	"itemAmount": 1,
+
+	"itemPrice": 3,
+	
+	"inventory": {"inventoryCode": 1}
+}
+```
+
+---
+
+#### List Items
+URL: **/items**
+
+Method: **GET**
+
+---
+
+#### Show Item
+URL: **/items/:itemId**
+
+Method: **GET**
+
+---
+
+#### Delete Item
+URL: **/items/:itemId**
+
+Method: **DELETE**
+
+---
 
 #### Create Local
 URL: **/locals**
@@ -191,48 +293,6 @@ Method: **PUT**
 
 ---
 
-#### Create Inventory
-URL: **/inventories**
-
-Method: **POST**
-
----
-
-#### Show Inventory
-URL: **/inventories/:id**
-
-Method: **GET**
-
----
-
-#### List Inventory
-URL: **/inventories/**
-
-Method: **GET**
-
----
-
-#### Delete Inventory
-URL: **/inventories/:id**
-
-Method: **DELETE**
-
----
-
-#### Update Inventory
-URL: **/inventories/:id**
-
-Method: **PUT**
-
-Example:
-```json
-{
-	"items": [{"itemDescription": "Water", "itemAmount": 3, "itemPrice": 4}]
-}
-```
-
----
-
 ### Percentage of Non Infected Survivors
 URL: **/reports/percentages/non_infected**
 
@@ -250,3 +310,6 @@ Method: **GET**
 ### Disclaimer
 Both the trading and the percentage of recourses per survivor report were not implemented.
 The trading is implemented (logical) but doing no update on database.
+
+### How to Start Application
+Run the SpringBootApp.java as JavaApplication to start playing. Then go to Postman and enjoy. (:
