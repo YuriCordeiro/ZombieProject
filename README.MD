@@ -11,9 +11,7 @@ Method: **POST**
 Example:
 ```json
 {
-	
-	
-		"genderDescription": "Male"
+	"genderDescription": "Male"
 }
 ```
 
@@ -27,9 +25,7 @@ Method: **PUT**
 Example:
 ```json
 {
-	
-	
-		"genderDescription": "Female"
+	"genderDescription": "Female"
 }
 ```
 
@@ -66,9 +62,7 @@ Method: **POST**
 Example:
 ```json
 {
-	
-	
-		"latitude": "130.120", "longitude": "-21.217"
+	"latitude": "130.120", "longitude": "-21.217"
 }
 ```
 
@@ -82,9 +76,7 @@ Method: **PUT**
 Example:
 ```json
 {
-	
-	
-		"latitude": "-299.999", "longitude": "001.991"
+	"latitude": "-299.999", "longitude": "001.991"
 }
 ```
 
@@ -120,8 +112,6 @@ Method: **POST**
 Example:
 ```json
 {
-	
-	
 	"survivorName": "John Travolta",
 	
 	"survivorAge" : 63,
@@ -132,8 +122,8 @@ Example:
 
 	"infected": false,
 	
-	"amountOfInfectedWarnings" : 0
-,
+	"amountOfInfectedWarnings" : 0,
+	
 	"points": 250
 }
 ```
@@ -148,19 +138,18 @@ Method: **PUT**
 Example:
 ```json
 {
-	
 	"survivorName": "Sophie",
 	
 	"survivorAge" : 17,
 
-	"local" : {"latitude": "-30.005", "longitude": "-71.010"} ,
+	"local" : {"latitude": "-30.005", "longitude": "-71.010"},
  
 	"survivorGender":  {"genderId": 2},
 
 	"infected": false,
 	
-	"amountOfInfectedWarnings" : 1
-,
+	"amountOfInfectedWarnings" : 1,
+	
 	"points": 100
 }
 ```
@@ -189,7 +178,7 @@ Method: **PUT**
 ---
 
 #### Trade Survivor's Items
-URL: **/survivors/trader/:tradingSurvivorCode/item/:itemCode/amount/:amountOfItemToTrade/benefited/:survivorReceptorCode
+URL: **/survivors/trader/:tradingSurvivorCode/item/:itemCode/amount/:amountOfItemToTrade/benefited/:survivorReceptorCode**
 
 Method: **PUT**
 
@@ -238,7 +227,6 @@ Method: **PUT**
 Example:
 ```json
 {
-	
 	"items": [{"itemDescription": "Water", "itemAmount": 3, "itemPrice": 4}]
 }
 ```
